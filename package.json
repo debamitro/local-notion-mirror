@@ -1,0 +1,23 @@
+{
+  "name": "ollama-web-chat",
+  "version": "1.0.0",
+  "description": "A web app that connects to Ollama for AI chat",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "generate-certs": "mkdir -p ssl && openssl req -x509 -newkey rsa:4096 -keyout ssl/private-key.pem -out ssl/certificate.pem -days 365 -nodes -subj \"/C=US/ST=State/L=City/O=Organization/CN=localhost\""
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "keywords": [
+    "ollama",
+    "ai",
+    "chat",
+    "web"
+  ],
+  "author": "",
+  "license": "MIT"
+}
