@@ -298,16 +298,74 @@ class ChatApp {
             const data = await response.json();
 
             if (response.ok) {
-                let message = 'Here are your Notion pages:\n\n';
+                const message = document.createElement('div');
+                message.className = 'message assistant';
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                contentDiv.textContent = 'Here are your Notion pages:';
+                
+                const pagesContainer = document.createElement('div');
+                pagesContainer.className = 'notion-pages-container';
+                
                 (data.pages as NotionPage[]).forEach(page => {
                     const title = page.properties?.title?.title?.[0]?.text?.content || 
                                 page.properties?.Name?.title?.[0]?.text?.content || 
                                 'Untitled';
-                    const url = page.url;
-                    message += `• [${title}](${url})\n`;
-                });
+                    
+                    const pageContainer = document.createElement('div');
+                    pageContainer.className = 'page-container';
 
-                this.addMessage('assistant', message);
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = 'page-checkbox';
+                    checkbox.addEventListener('change', async () => {
+                        if (checkbox.checked) {
+                            try {
+                                const response = await fetch(`/api/notion/pages/${page.id}/content`);
+                                const data = await response.json();
+                                if (response.ok) {
+                                    const messageInput = document.getElementById('messageInput') as HTMLInputElement;
+                                    messageInput.value = data.content;
+                                    messageInput.focus();
+                                } else {
+                                    throw new Error(data.error || 'Failed to fetch page content');
+                                }
+                            } catch (error) {
+                                console.error('Error fetching page content:', error);
+                                this.addMessage('assistant', 'Error fetching page content. Please try again.');
+                            }
+                            checkbox.checked = false;
+                        }
+                    });
+
+                    const pageButton = document.createElement('button');
+                    pageButton.className = 'notion-page-button';
+                    
+                    const pageIcon = document.createElement('span');
+                    pageIcon.className = 'page-icon';
+                    pageIcon.textContent = '📄';
+                    
+                    const pageTitle = document.createElement('span');
+                    pageTitle.className = 'page-title';
+                    pageTitle.textContent = title;
+                    
+                    pageButton.appendChild(pageIcon);
+                    pageButton.appendChild(pageTitle);
+                    
+                    pageButton.addEventListener('click', () => {
+                        window.open(page.url, '_blank');
+                    });
+                    
+                    pageContainer.appendChild(checkbox);
+                    pageContainer.appendChild(pageButton);
+                    pagesContainer.appendChild(pageContainer);
+                });
+                
+                contentDiv.appendChild(pagesContainer);
+                message.appendChild(contentDiv);
+                this.messagesContainer.appendChild(message);
+                this.scrollToBottom();
             } else {
                 throw new Error(data.error || 'Failed to fetch Notion pages');
             }

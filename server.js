@@ -100,6 +100,50 @@ app.post('/api/notion/disconnect', (req, res) => {
     res.json({ success: true, message: 'Disconnected from Notion' });
 });
 
+app.get('/api/notion/pages/:pageId/content', async (req, res) => {
+    try {
+        if (!notionClient.isConnected()) {
+            return res.status(401).json({ error: 'Not connected to Notion' });
+        }
+
+        const { pageId } = req.params;
+        const response = await fetch(`https://api.notion.com/v1/blocks/${pageId}/children`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Notion-Version': '2022-06-28'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch page content: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        const content = data.results.map(block => {
+            if (block.type === 'paragraph') {
+                return block.paragraph.rich_text.map(text => text.plain_text).join('');
+            } else if (block.type === 'heading_1') {
+                return `# ${block.heading_1.rich_text.map(text => text.plain_text).join('')}`;
+            } else if (block.type === 'heading_2') {
+                return `## ${block.heading_2.rich_text.map(text => text.plain_text).join('')}`;
+            } else if (block.type === 'heading_3') {
+                return `### ${block.heading_3.rich_text.map(text => text.plain_text).join('')}`;
+            } else if (block.type === 'bulleted_list_item') {
+                return `• ${block.bulleted_list_item.rich_text.map(text => text.plain_text).join('')}`;
+            } else if (block.type === 'numbered_list_item') {
+                return `1. ${block.numbered_list_item.rich_text.map(text => text.plain_text).join('')}`;
+            }
+            return '';
+        }).filter(text => text).join('\n');
+
+        res.json({ content });
+    } catch (error) {
+        console.error('Error fetching page content:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 app.get('/api/notion/pages', async (req, res) => {
     try {
         if (!notionClient.isConnected()) {
