@@ -1,4 +1,4 @@
-interface NotionPage {
+export interface NotionPage {
     id: string;
     url: string;
     properties: {

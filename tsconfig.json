@@ -11,6 +11,6 @@
     "moduleResolution": "node",
     "lib": ["DOM", "ES2020"]
   },
-  "include": ["*.ts"],
+  "include": ["src/frontend/*.ts"],
   "exclude": ["node_modules"]
 }

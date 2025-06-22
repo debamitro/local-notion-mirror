@@ -1,6 +1,6 @@
 import { NotionPage } from "./NotionPage";
 
-class ChatApp {
+export class ChatApp {
     private messagesContainer: HTMLElement;
     private messageInput: HTMLInputElement;
     private sendButton: HTMLButtonElement;
