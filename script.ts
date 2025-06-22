@@ -44,7 +44,6 @@ class ChatApp {
         this.cancelTokenButton = document.getElementById('cancelToken') as HTMLButtonElement;
         
         this.initializeEventListeners();
-        this.addWelcomeMessage();
         this.checkNotionStatus();
     }
 
@@ -78,10 +77,6 @@ class ChatApp {
                 this.handleTokenSubmit();
             }
         });
-    }
-
-    private addWelcomeMessage(): void {
-        this.addMessage('assistant', 'Hello! I\'m connected to Ollama. Ask me anything!');
     }
 
     private async sendMessage(): Promise<void> {
@@ -223,7 +218,7 @@ class ChatApp {
 
             if (data.success) {
                 this.updateNotionButton(true);
-                this.addMessage('assistant', 'Connected to Notion MCP server! Click the "View Pages" button to see your Notion pages.');
+                this.addMessage('assistant', 'Connected to Notion! Click the "View Pages" button to see your Notion pages.');
                 this.createViewPagesButton();
             } else {
                 throw new Error(data.error || 'Failed to connect');
@@ -319,26 +314,6 @@ class ChatApp {
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
                     checkbox.className = 'page-checkbox';
-                    checkbox.addEventListener('change', async () => {
-                        if (checkbox.checked) {
-                            try {
-                                const response = await fetch(`/api/notion/pages/${page.id}/content`);
-                                const data = await response.json();
-                                if (response.ok) {
-                                    const messageInput = document.getElementById('messageInput') as HTMLInputElement;
-                                    messageInput.value = data.content;
-                                    messageInput.focus();
-                                } else {
-                                    throw new Error(data.error || 'Failed to fetch page content');
-                                }
-                            } catch (error) {
-                                console.error('Error fetching page content:', error);
-                                this.addMessage('assistant', 'Error fetching page content. Please try again.');
-                            }
-                            checkbox.checked = false;
-                        }
-                    });
-
                     const pageButton = document.createElement('button');
                     pageButton.className = 'notion-page-button';
                     
@@ -353,6 +328,7 @@ class ChatApp {
                     pageButton.appendChild(pageIcon);
                     pageButton.appendChild(pageTitle);
                     
+                    pageButton.dataset.pageId = page.id;
                     pageButton.addEventListener('click', () => {
                         window.open(page.url, '_blank');
                     });
@@ -361,6 +337,48 @@ class ChatApp {
                     pageContainer.appendChild(pageButton);
                     pagesContainer.appendChild(pageContainer);
                 });
+
+                // Add copy selected content button
+                const copyButton = document.createElement('button');
+                copyButton.className = 'copy-content-button';
+                copyButton.textContent = 'Find out monetization opportunities';
+                copyButton.addEventListener('click', async () => {
+                    const selectedCheckboxes = Array.from(pagesContainer.querySelectorAll<HTMLInputElement>('input[type="checkbox"]:checked'));
+                    if (selectedCheckboxes.length === 0) {
+                        this.addMessage('assistant', 'Please select at least one page to copy.');
+                        return;
+                    }
+
+                    let combinedContent = '';
+                    for (const checkbox of selectedCheckboxes) {
+                        const pageContainer = checkbox.closest('.page-container') as HTMLElement;
+                        const pageButton = pageContainer?.querySelector('.notion-page-button') as HTMLElement;
+                        const pageId = pageButton.dataset.pageId;
+
+                        if (pageId) {
+                            try {
+                                const response = await fetch(`/api/notion/pages/${pageId}/content`);
+                                const data = await response.json();
+                                if (response.ok) {
+                                    combinedContent += 'read the following journal entries and provide concrete steps for monetization: ' + data.content + '\n\n';
+                                }
+                            } catch (error: unknown) {
+                                console.error('Error fetching page content:', error);
+                            }
+                        }
+                    }
+
+                    if (combinedContent) {
+                        this.messageInput.value = combinedContent.trim();
+                        this.messageInput.focus();
+                        // Uncheck all checkboxes
+                        selectedCheckboxes.forEach((checkbox) => {
+                            checkbox.checked = false;
+                        });
+                    }
+                });
+
+                pagesContainer.appendChild(copyButton);
                 
                 contentDiv.appendChild(pagesContainer);
                 message.appendChild(contentDiv);
