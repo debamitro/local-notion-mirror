@@ -94,6 +94,12 @@ app.get('/api/notion/status', (req, res) => {
     res.json({ connected: notionClient.isConnected() });
 });
 
+app.post('/api/notion/disconnect', (req, res) => {
+    mcpConnected = false;
+    authToken = null;
+    res.json({ success: true, message: 'Disconnected from Notion' });
+});
+
 app.get('/api/notion/pages', async (req, res) => {
     try {
         if (!notionClient.isConnected()) {
