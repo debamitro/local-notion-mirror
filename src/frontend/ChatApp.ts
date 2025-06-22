@@ -1,4 +1,9 @@
-import { NotionPage } from "./NotionPage";
+import { NotionPage } from "./NotionPage.js";
+
+declare const marked: {
+    parse: (text: string, options?: { async: boolean }) => string;
+    setOptions: (options: { gfm?: boolean; breaks?: boolean }) => void;
+};
 
 export class ChatApp {
     private messagesContainer: HTMLElement;
@@ -99,7 +104,15 @@ export class ChatApp {
         
         const contentDiv = document.createElement('div');
         contentDiv.className = 'message-content';
-        contentDiv.textContent = content;
+        
+        // Configure marked options
+        marked.setOptions({
+            gfm: true, // GitHub Flavored Markdown
+            breaks: true, // Convert line breaks to <br>
+        });
+
+        // Convert markdown to HTML
+        contentDiv.innerHTML = marked.parse(content, { async: false }) as string;
         
         messageDiv.appendChild(contentDiv);
         this.messagesContainer.appendChild(messageDiv);
