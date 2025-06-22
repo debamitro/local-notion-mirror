@@ -232,6 +232,49 @@ export class ChatApp {
         }
     }
 
+    private createCopyToChatButton(pagesContainer: HTMLElement, text: string, content: string): HTMLButtonElement {
+        const copyButton = document.createElement('button');
+        copyButton.className = 'copy-content-button';
+        copyButton.textContent = text;
+        copyButton.addEventListener('click', async () => {
+            const selectedCheckboxes = Array.from(pagesContainer.querySelectorAll<HTMLInputElement>('input[type="checkbox"]:checked'));
+            if (selectedCheckboxes.length === 0) {
+                this.addMessage('assistant', 'Please select at least one page to copy.');
+                return;
+            }
+
+            let combinedContent = '';
+            for (const checkbox of selectedCheckboxes) {
+                const pageContainer = checkbox.closest('.page-container') as HTMLElement;
+                const pageButton = pageContainer?.querySelector('.notion-page-button') as HTMLElement;
+                const pageId = pageButton.dataset.pageId;
+
+                if (pageId) {
+                    try {
+                        const response = await fetch(`/api/notion/pages/${pageId}/content`);
+                        const data = await response.json();
+                        if (response.ok) {
+                            combinedContent += content + data.content + '\n\n';
+                        }
+                    } catch (error: unknown) {
+                        console.error('Error fetching page content:', error);
+                    }
+                }
+            }
+
+            if (combinedContent) {
+                this.messageInput.value = combinedContent.trim();
+                this.messageInput.focus();
+                // Uncheck all checkboxes
+                selectedCheckboxes.forEach((checkbox) => {
+                    checkbox.checked = false;
+                });
+            }
+        });
+
+        return copyButton;
+    }
+    
     private updateNotionButton(connected: boolean): void {
         this.notionConnected = connected;
         this.notionButton.disabled = false;
@@ -319,48 +362,17 @@ export class ChatApp {
                     pagesContainer.appendChild(pageContainer);
                 });
 
-                // Add copy selected content button
-                const copyButton = document.createElement('button');
-                copyButton.className = 'copy-content-button';
-                copyButton.textContent = 'Find out monetization opportunities';
-                copyButton.addEventListener('click', async () => {
-                    const selectedCheckboxes = Array.from(pagesContainer.querySelectorAll<HTMLInputElement>('input[type="checkbox"]:checked'));
-                    if (selectedCheckboxes.length === 0) {
-                        this.addMessage('assistant', 'Please select at least one page to copy.');
-                        return;
-                    }
-
-                    let combinedContent = '';
-                    for (const checkbox of selectedCheckboxes) {
-                        const pageContainer = checkbox.closest('.page-container') as HTMLElement;
-                        const pageButton = pageContainer?.querySelector('.notion-page-button') as HTMLElement;
-                        const pageId = pageButton.dataset.pageId;
-
-                        if (pageId) {
-                            try {
-                                const response = await fetch(`/api/notion/pages/${pageId}/content`);
-                                const data = await response.json();
-                                if (response.ok) {
-                                    combinedContent += 'read the following journal entries and provide concrete steps for monetization: ' + data.content + '\n\n';
-                                }
-                            } catch (error: unknown) {
-                                console.error('Error fetching page content:', error);
-                            }
-                        }
-                    }
-
-                    if (combinedContent) {
-                        this.messageInput.value = combinedContent.trim();
-                        this.messageInput.focus();
-                        // Uncheck all checkboxes
-                        selectedCheckboxes.forEach((checkbox) => {
-                            checkbox.checked = false;
-                        });
-                    }
-                });
-
-                pagesContainer.appendChild(copyButton);
+                const copyButton1 = this.createCopyToChatButton(pagesContainer, 'Find out monetization opportunities',
+                    'read the following journal entries and provide concrete steps for monetization: '
+                )
+                pagesContainer.appendChild(copyButton1);
                 
+                const copyButton2 = this.createCopyToChatButton(pagesContainer, 'Find out growth opportunities',
+                    'read the following journal entries and provide concrete steps for growth within the organization: '
+                )
+                pagesContainer.appendChild(copyButton2);
+                console.log('added ', copyButton2);
+
                 contentDiv.appendChild(pagesContainer);
                 message.appendChild(contentDiv);
                 this.messagesContainer.appendChild(message);

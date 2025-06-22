@@ -1,4 +1,4 @@
-import { ChatApp } from "./ChatApp";
+import { ChatApp } from "./ChatApp.js";
 
 document.addEventListener('DOMContentLoaded', () => {
     new ChatApp();
