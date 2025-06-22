@@ -7,7 +7,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist",
-    "rootDir": "./",
+    "rootDir": "./src/frontend",
     "moduleResolution": "node",
     "lib": ["DOM", "ES2020"]
   },
